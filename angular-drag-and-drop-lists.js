@@ -1,5 +1,5 @@
 /**
- * angular-drag-and-drop-lists v1.0.0
+ * angular-drag-and-drop-lists v1.1.0
  *
  * Copyright (c) 2014 Marcel Juenemann mail@marcel-junemann.de
  * https://github.com/marceljuenemann/angular-drag-and-drop-lists
@@ -107,7 +107,7 @@ angular.module('dndLists', [])
                 // the fallback which was initialized to none
                 var dropEffect = event.dataTransfer.dropEffect !== "none"
                                ? event.dataTransfer.dropEffect : dndDropEffectWorkaround.dropEffect;
-              
+
                 // Noto que en ciertas condiciones se dispara el dragend sin el drop, y el
                 // event.dataTransfer.dropEffect !== none, lo que ocaciona que se ejecute
                 // el dndMove o dndCopied, sin haber copiado el item en el destino nuevo
