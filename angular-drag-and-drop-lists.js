@@ -32,6 +32,7 @@ angular.module('dndLists', [])
      *                      is not doing that for you automatically.
      * - dnd-copied         Same as dnd-moved, just that it is called when the element was copied
      *                      instead of moved.
+     * - dnd-channel
      *
      * CSS classes:
      * - dndDragging        This class will be added to the element while the element is being dragged.
@@ -42,8 +43,8 @@ angular.module('dndLists', [])
      *                      meaning it only affects the original element that is still at it's source
      *                      position, and not the "element" that the user is dragging with his mouse pointer
      */
-    .directive('dndDraggable', ['$parse', '$timeout', 'dndDropEffectWorkaround', 'dndDragTypeWorkaround',
-                        function($parse,   $timeout,   dndDropEffectWorkaround,   dndDragTypeWorkaround) {
+    .directive('dndDraggable', ['$parse', '$timeout', 'dndDropEffectWorkaround', 'dndDragTypeWorkaround', '$rootScope',
+                        function($parse,   $timeout,   dndDropEffectWorkaround,   dndDragTypeWorkaround,   $rootScope) {
         return function(scope, element, attr) {
             // Set the HTML5 draggable attribute on the element
             element.attr("draggable", "true");
@@ -67,6 +68,10 @@ angular.module('dndLists', [])
                 dndDropEffectWorkaround.dropEffect = "none";
                 dndDragTypeWorkaround.isDragging = true;
 
+                //We indicate with an event that start a process of drag on a specific channel.
+                var sendChannel = attrs.dragChannel || "dndListChannel";
+                $rootScope.$broadcast("DNDLIST_DRAG_START", sendChannel);
+
                 event.stopPropagation();
             });
 
@@ -76,6 +81,11 @@ angular.module('dndLists', [])
              * we will invoke the callbacks specified with the dnd-moved or dnd-copied attribute.
              */
             element.on('dragend', function(event) {
+                // Indicamos con un evento que termina un proceso de drag en un canal especifico.
+                // We indicate with an event that ends a process of drag on a specific channel.
+                var sendChannel = attrs.dragChannel || "dndListChannel";
+                $rootScope.$broadcast("DNDLIST_DRAG_END", sendChannel);
+
                 // If the dropEffect is none it means that the drag action was aborted or
                 // that the browser does not support this field. In either case we use
                 // the fallback which was initialized to none
@@ -150,14 +160,50 @@ angular.module('dndLists', [])
      *                      added. This element is of type li and has the class dndPlaceholder set.
      * - dndDragover        This class will be added to the list while an element is being dragged over the list.
      */
-    .directive('dndList', ['$timeout', 'dndDropEffectWorkaround', 'dndDragTypeWorkaround',
-                   function($timeout,   dndDropEffectWorkaround,   dndDragTypeWorkaround) {
+    .directive('dndList', ['$timeout', 'dndDropEffectWorkaround', 'dndDragTypeWorkaround', '$rootScope',
+                   function($timeout,   dndDropEffectWorkaround,   dndDragTypeWorkaround,   $rootScope) {
         return function(scope, element, attr) {
             // While an element is dragged over the list, this placeholder element is inserted
             // at the location where the element would be inserted after dropping
             var placeholder = angular.element("<li class='dndPlaceholder'></li>");
             var placeholderNode = placeholder[0];
             var listNode = element[0];
+
+            var dragChannel = "";
+            var dropChannel = attr.dropChannel || "defaultchannel" ;
+
+            // funcion que  valida si un drag es para un dropzone.
+            function isDragChannelAccepted(dragChannel, dropChannel) {
+              if (dropChannel === "*") {
+                return true;
+              }
+
+              var channelMatchPattern = new RegExp("(\\s|[,])+(" + dragChannel + ")(\\s|[,])+", "i");
+
+              return channelMatchPattern.test("," + dropChannel + ",");
+            }
+
+            // Cuando empieza un proceso de drag
+            var undoOnDragStar = $rootScope.$on('DNDLIST_DRAG_START', function (e, channel) {
+              dragChannel = channel;
+            });
+
+            // Cuando finaliza el proceso de drag.
+            var undoOnDragEnd = $rootScope.$on('DNDLIST_DRAG_END', function (e, channel) {
+              dragChannel = "";
+            });
+
+            scope.$on('$destroy', function () {
+              undoOnDragStar();
+              undoOnDragEnd();
+            });
+
+            attr.$observe('dropChannel', function (value) {
+              if (value) {
+                dropChannel = value;
+              }
+            });
+
 
             /**
              * The dragover event is triggered "every few hundred milliseconds" while an element
@@ -168,6 +214,7 @@ angular.module('dndLists', [])
                 // Usually we would use a custom drag type for this, but IE doesn't support that.
                 if (!dndDragTypeWorkaround.isDragging) return true;
                 if (!isDropAllowed(event.dataTransfer.types)) return true;
+                if (!isDragChannelAccepted(dragChannel, dropChannel)) return true;
 
                 // First of all, make sure that the placeholder is shown
                 // This is especially important if the list is empty
