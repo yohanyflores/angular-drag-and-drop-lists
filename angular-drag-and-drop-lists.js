@@ -170,7 +170,7 @@ angular.module('dndLists', [])
             var listNode = element[0];
 
             var dragChannel = "";
-            var dropChannel = attr.dropChannel || "defaultchannel" ;
+            var dropChannel = attr.dropChannel || "dndListChannel" ;
 
             // funcion que  valida si un drag es para un dropzone.
             function isDragChannelAccepted(dragChannel, dropChannel) {
