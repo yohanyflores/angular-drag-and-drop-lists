@@ -32,7 +32,8 @@ angular.module('dndLists', [])
      *                      is not doing that for you automatically.
      * - dnd-copied         Same as dnd-moved, just that it is called when the element was copied
      *                      instead of moved.
-     * - dnd-channel
+     * - dnd-drag-channel   Takes a string that can be used as the channel name for the dragging operation.
+     *                      Default channel is "dndListChannel".
      *
      * CSS classes:
      * - dndDragging        This class will be added to the element while the element is being dragged.
@@ -54,6 +55,21 @@ angular.module('dndLists', [])
              * which is the primary way we communicate with the target element
              */
             element.on('dragstart', function(event) {
+
+                //
+                var dragImage = attr.dndDragImage || null;
+                if (dragImage) {
+                    var dragImageFn = $parse(attr.dndDragImage);
+                    scope.$apply(function() {
+                        var dragImageParameters = dragImageFn(scope, {$event: event});
+                        if (dragImageParameters && dragImageParameters.image) {
+                            var xOffset = dragImageParameters.xOffset || 0,
+                                yOffset = dragImageParameters.yOffset || 0;
+                            event.dataTransfer.setDragImage(dragImageParameters.image, xOffset, yOffset);
+                        }
+                    });
+                }
+
                 // Serialize the data associated with this element. IE only supports the Text drag type
                 event.dataTransfer.setData("Text", angular.toJson(scope.$eval(attr.dndDraggable)));
 
@@ -69,7 +85,7 @@ angular.module('dndLists', [])
                 dndDragTypeWorkaround.isDragging = true;
 
                 //We indicate with an event that start a process of drag on a specific channel.
-                var sendChannel = attr.dragChannel || "dndListChannel";
+                var sendChannel = attr.dndDragChannel || "dndListChannel";
                 $rootScope.$broadcast("DNDLIST_DRAG_START", sendChannel);
 
                 event.stopPropagation();
@@ -83,7 +99,7 @@ angular.module('dndLists', [])
             element.on('dragend', function(event) {
                 // Indicamos con un evento que termina un proceso de drag en un canal especifico.
                 // We indicate with an event that ends a process of drag on a specific channel.
-                var sendChannel = attr.dragChannel || "dndListChannel";
+                var sendChannel = attr.dndDragChannel || "dndListChannel";
                 $rootScope.$broadcast("DNDLIST_DRAG_END", sendChannel);
 
                 // If the dropEffect is none it means that the drag action was aborted or
@@ -155,6 +171,12 @@ angular.module('dndLists', [])
      * - dnd-list           Required attribute. The value has to be the array in which the data of the
      *                      dropped element should be inserted.
      *
+     * - dnd-drop-channel   The channel that the drop site accepts. The dragged element should have the same
+     *                      channel as this drop site for it to be droppable at this location.
+     *                      It is possible to provide comma separated list of channels. Default is 'dndListChannel'
+     *                      NOTE: Also special value of drag-channel attribute is available to accept
+     *                            dragged element with any channel value — *
+     *
      * CSS classes:
      * - dndPlaceholder     When an element is dragged over the list, a new placeholder child element will be
      *                      added. This element is of type li and has the class dndPlaceholder set.
@@ -170,20 +192,18 @@ angular.module('dndLists', [])
             var listNode = element[0];
 
             var dragChannel = "";
-            var dropChannel = attr.dropChannel || "dndListChannel" ;
+            var dropChannel = attr.dndDropChannel || "dndListChannel" ;
 
-            // funcion que  valida si un drag es para un dropzone.
+            // To check a drag act is for my drop-zones.
             function isDragChannelAccepted(dragChannel, dropChannel) {
               if (dropChannel === "*") {
                 return true;
               }
-
               var channelMatchPattern = new RegExp("(\\s|[,])+(" + dragChannel + ")(\\s|[,])+", "i");
-
               return channelMatchPattern.test("," + dropChannel + ",");
             }
 
-            // Cuando empieza un proceso de drag
+            // When a process starts to drag
             var undoOnDragStar = $rootScope.$on('DNDLIST_DRAG_START', function (e, channel) {
               dragChannel = channel;
             });
