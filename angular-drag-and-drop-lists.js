@@ -69,7 +69,7 @@ angular.module('dndLists', [])
                 dndDragTypeWorkaround.isDragging = true;
 
                 //We indicate with an event that start a process of drag on a specific channel.
-                var sendChannel = attrs.dragChannel || "dndListChannel";
+                var sendChannel = attr.dragChannel || "dndListChannel";
                 $rootScope.$broadcast("DNDLIST_DRAG_START", sendChannel);
 
                 event.stopPropagation();
@@ -83,7 +83,7 @@ angular.module('dndLists', [])
             element.on('dragend', function(event) {
                 // Indicamos con un evento que termina un proceso de drag en un canal especifico.
                 // We indicate with an event that ends a process of drag on a specific channel.
-                var sendChannel = attrs.dragChannel || "dndListChannel";
+                var sendChannel = attr.dragChannel || "dndListChannel";
                 $rootScope.$broadcast("DNDLIST_DRAG_END", sendChannel);
 
                 // If the dropEffect is none it means that the drag action was aborted or
