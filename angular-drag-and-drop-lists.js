@@ -187,7 +187,8 @@ angular.module('dndLists', [])
         return function(scope, element, attr) {
             // While an element is dragged over the list, this placeholder element is inserted
             // at the location where the element would be inserted after dropping
-            var placeholder = angular.element("<li class='dndPlaceholder'></li>");
+            var placeHolderString = attr.dndPlaceholder || "<li class='dndPlaceholder'></li>";
+            var placeholder = angular.element(placeHolderString);
             var placeholderNode = placeholder[0];
             var listNode = element[0];
 
