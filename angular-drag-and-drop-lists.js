@@ -212,6 +212,12 @@ angular.module('dndLists', [])
             // Cuando finaliza el proceso de drag.
             var undoOnDragEnd = $rootScope.$on('DNDLIST_DRAG_END', function (e, channel) {
               dragChannel = "";
+              try {
+                placeholder.remove();
+              } catch (e) {
+                //
+              }
+
             });
 
             scope.$on('$destroy', function () {
