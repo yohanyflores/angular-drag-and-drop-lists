@@ -175,7 +175,10 @@ angular.module('dndLists', [])
      *                      dnd-type attribute will be dropable.
      * - dnd-disable-if     Optional boolean expresssion. When it evaluates to true, no dropping into
      *                      the list is possible. Note that this also disables rearranging items inside the list.
-     *
+     * - dnd-last-hold-if   Optional boolean expression. When it evaluates to true, no dropping into last item
+     *                      is possible.
+     * - dnd-first-hold-if  Optional boolean expression. When it evaluates to true, no dropping into first item
+     *                      is possible.
      * CSS classes:
      * - dndPlaceholder     When an element is dragged over the list, a new placeholder child element will be
      *                      added. This element is of type li and has the class dndPlaceholder set.
@@ -265,6 +268,23 @@ angular.module('dndLists', [])
                         }
                     }
                 }
+
+                if (attr.dndLastHoldIf) {
+                    if (scope.$eval(attr.dndLastHoldIf)) {
+                        if (placeholderNode.previousElementSibling && !placeholderNode.nextElementSibling) {
+                            listNode.insertBefore(placeholderNode, placeholderNode.previousElementSibling );
+                        }
+                    }
+                }
+
+                if (attr.dndFirstHoldIf) {
+                    if (scope.$eval(attr.dndFirstHoldIf)) {
+                        if (!placeholderNode.previousElementSibling && placeholderNode.nextElementSibling) {
+                            listNode.insertBefore(placeholderNode, placeholderNode.nextElementSibling );
+                        }
+                    }
+                }
+
 
                 element.addClass("dndDragover");
                 event.preventDefault();
